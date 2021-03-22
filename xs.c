@@ -41,6 +41,26 @@ typedef union {
   };
 } xs;
 
+void *xmalloc(size_t size) 
+{
+    void *p = malloc(size);
+    if (!p) {
+        fprintf(stderr, "*** xmalloc: malloc failure (returned NULL), exiting. ***\n");
+        exit(1);
+    }
+    return p;
+}
+
+void *xrealloc(void *ptr ,size_t size)
+{
+    ptr = realloc(ptr, size);
+    if (!ptr) {
+        fprintf(stderr, "xrealloc: realloc failure (return NULL), exiting. ***\n");
+        exit(1);
+    }
+    return ptr;
+}
+
 static inline bool xs_is_ptr(const xs *x) { return x->is_ptr; }
 
 static inline bool xs_is_large_string(const xs *x) {
@@ -94,8 +114,8 @@ static inline int ilog2(uint32_t n) { return 32 - __builtin_clz(n) - 1; }
 static void xs_allocate_data(xs *x, size_t len, bool reallocate) {
   /* Medium string */
   if (len < LARGE_STRING_LEN) {
-    x->ptr = reallocate ? realloc(x->ptr, (size_t)1 << x->capacity)
-                        : malloc((size_t)1 << x->capacity);
+    x->ptr = reallocate ? xrealloc(x->ptr, (size_t)1 << x->capacity)
+                        : xmalloc((size_t)1 << x->capacity);
     return;
   }
 
@@ -103,8 +123,8 @@ static void xs_allocate_data(xs *x, size_t len, bool reallocate) {
   x->is_large_string = 1;
 
   /* The extra 4 bytes are used to store the reference count */
-  x->ptr = reallocate ? realloc(x->ptr, (size_t)(1 << x->capacity) + 4)
-                      : malloc((size_t)(1 << x->capacity) + 4);
+  x->ptr = reallocate ? xrealloc(x->ptr, (size_t)(1 << x->capacity) + 4)
+                      : xmalloc((size_t)(1 << x->capacity) + 4);
 
   xs_set_refcnt(x, 1);
 }

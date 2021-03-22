@@ -282,13 +282,40 @@ xs *xs_trim(xs *x, const char *trimset) {
 #undef set_bit
 }
 
+xs *xs_copy(xs *x, const xs *p) {
+  *x = xs_literal_empty();
+  if (!xs_is_large_string(p)) {
+      x = xs_new(x, xs_data(p));
+  } else {
+      memcpy(x, p, 16);
+      xs_inc_refcnt(x);
+  }
+
+  return x;
+}
+
 int main(int argc, char *argv[]) {
   xs string = *xs_tmp("\n foobarbar \n\n\n");
   xs_trim(&string, "\n ");
   printf("[%s] : %2zu\n", xs_data(&string), xs_size(&string));
 
   xs prefix = *xs_tmp("((("), suffix = *xs_tmp(")))");
-  xs_concat(&string, &prefix, &suffix);
+  //xs_concat(&string, &prefix, &suffix);
   printf("[%s] : %2zu\n", xs_data(&string), xs_size(&string));
+  
+  xs long_str = *xs_tmp("this a long string exceed 16.");
+  xs_concat(&long_str, &prefix, &suffix);
+  printf("[%s] : %2zu\n", xs_data(&long_str), xs_size(&long_str));
+
+  xs medium_str = *xs_tmp("12345678901234");
+  xs_concat(&medium_str, &prefix, &suffix);
+
+  xs copyed1 = *xs_copy(&xs_literal_empty(), &string);
+  printf("[%s] : %2zu\n", xs_data(&copyed1), xs_size(&copyed1));
+  
+  xs copyed2 = *xs_copy(&xs_literal_empty(), &medium_str);
+  xs copyed3 = *xs_copy(&xs_literal_empty(), &long_str);
+  printf("[%s] : %2zu\n", xs_data(&copyed2), xs_size(&copyed2));
+  printf("[%s] : %2zu\n", xs_data(&copyed3), xs_size(&copyed3));
   return 0;
 }
